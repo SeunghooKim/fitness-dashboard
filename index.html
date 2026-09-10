@@ -39,17 +39,42 @@
   #ft-app * { box-sizing: border-box; }
 
   .ft-header { text-align: center; padding: 4px 0 14px; }
+  .ft-topbar { display: flex; align-items: center; gap: 8px; padding: 4px 0 12px; }
+  .ft-topbar .ft-title { flex: 1; }
+  .ft-spacer { width: 34px; flex-shrink: 0; }
   .ft-title { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
   .ft-subtitle { font-size: 12.5px; color: var(--text-soft); margin: 4px 0 0; }
 
-  .ft-sync-row { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; color: var(--text-mute); padding: 0 0 12px; }
-  .ft-sync-btn, .ft-settings-btn {
-    font-size: 11px; font-weight: 600; color: var(--accent);
-    background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 3px 9px; cursor: pointer;
+  .ft-menu-wrap { position: relative; z-index: 25; flex-shrink: 0; }
+  .ft-gear {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-soft); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
-  .ft-settings-btn { color: var(--text-mute); border-color: transparent; text-decoration: underline; }
-  .ft-sync-btn:disabled { opacity: 0.6; }
+  .ft-gear:hover { background: var(--track); color: var(--text); }
+  .ft-gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ft-gear.is-busy svg { animation: ft-spin 1.4s linear infinite; }
+  @keyframes ft-spin { to { transform: rotate(360deg); } }
+
+  .ft-menu-backdrop { position: fixed; inset: 0; z-index: 20; }
+  .ft-menu {
+    position: absolute; right: 0; top: 40px; z-index: 26;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 8px 28px rgba(20, 20, 30, 0.12);
+    min-width: 210px; padding: 6px; text-align: left;
+  }
+  .ft-menu-status { font-size: 11px; color: var(--text-mute); padding: 6px 10px 4px; }
+  .ft-menu-item {
+    display: block; width: 100%; text-align: left; font-family: inherit;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    background: none; border: none; border-radius: 8px;
+    padding: 8px 10px; cursor: pointer;
+  }
+  .ft-menu-item:hover { background: var(--track); }
+  .ft-menu-item:disabled { opacity: 0.5; cursor: default; }
+  .ft-menu-item.is-danger { color: var(--danger); }
+  .ft-menu-sep { height: 1px; background: var(--border); margin: 5px 8px; }
 
   .ft-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -62,8 +87,57 @@
     color: var(--text-soft); padding: 4px 10px; border-radius: 8px; line-height: 1;
   }
   .ft-navbtn:hover { background: var(--track); color: var(--text); }
-  .ft-weekrange { flex: 1; text-align: center; font-size: 13px; font-weight: 600; }
+  .ft-weekrange {
+    flex: 1; text-align: center; font-size: 13px; font-weight: 600;
+    font-family: inherit; color: var(--text);
+    background: none; border: none; border-radius: 8px;
+    padding: 4px 6px; cursor: pointer;
+  }
+  .ft-weekrange:hover { background: var(--track); }
+  .ft-weekrange:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .ft-weekrange span { display: block; font-size: 11px; font-weight: 400; color: var(--text-mute); margin-top: 1px; }
+
+  .ft-backdrop {
+    position: fixed; inset: 0; z-index: 40; padding: 16px;
+    background: rgba(24, 24, 30, 0.34);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ft-modal {
+    background: var(--surface); border-radius: 16px; padding: 14px;
+    width: 100%; max-width: 360px; box-shadow: 0 14px 44px rgba(20, 20, 30, 0.22);
+  }
+  .ft-cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .ft-cal-month { flex: 1; text-align: center; font-size: 14px; font-weight: 650; }
+  .ft-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .ft-cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text-mute); padding-bottom: 4px; }
+  .ft-cal-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; padding: 0; cursor: pointer; border-radius: 10px;
+  }
+  .ft-cal-cell:hover { background: var(--track); }
+  .ft-cal-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ft-cal-cell.in-week { background: var(--accent-soft); }
+  .ft-cal-cell.is-other { opacity: 0.38; }
+  .ft-cal-ring {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(var(--ring) calc(var(--pct) * 1%), var(--track) 0);
+  }
+  .ft-cal-ring-inner {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-soft);
+  }
+  .ft-cal-cell.in-week .ft-cal-ring-inner { background: var(--accent-soft); }
+  .ft-cal-cell.is-today .ft-cal-ring-inner { color: var(--accent); font-weight: 700; }
+  .ft-cal-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .ft-cal-legend { flex: 1; font-size: 11px; color: var(--text-mute); }
+  .ft-cal-close {
+    font-size: 12.5px; font-weight: 600; font-family: inherit;
+    background: var(--track); color: var(--text-soft);
+    border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+  }
+  .ft-cal-close:hover { color: var(--text); }
 
   .ft-summary { display: flex; align-items: center; gap: 12px; padding: 12px; }
   .ft-ring {
@@ -80,15 +154,6 @@
   .ft-ring-label b { color: var(--text); font-weight: 650; }
   .ft-streak { margin-left: auto; text-align: right; font-size: 12px; color: var(--text-soft); }
   .ft-streak b { color: var(--chip-pink-fg); font-weight: 700; }
-
-  .ft-export-row { text-align: center; padding: 0 2px 12px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-  .ft-export-btn {
-    font-size: 12px; font-weight: 600; color: var(--accent);
-    background: none; border: 1px solid var(--border); border-radius: 9px;
-    padding: 6px 14px; cursor: pointer; display: inline-block;
-  }
-  .ft-export-btn:hover { background: var(--accent-soft); }
-  .ft-export-btn:disabled { opacity: 0.6; cursor: default; }
 
   .ft-confirm-banner { border: 1px solid var(--accent); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; background: var(--surface); }
   .ft-confirm-banner p { margin: 0 0 9px; font-size: 13px; }
@@ -217,6 +282,9 @@
   const MORNING_SUB = 'Cat–cow, low lunge + twist, shoulder rolls, cross-body stretch, forward fold';
   const PRE_SUB = 'Arm circles, walking lunges + twist, leg swings, hip circles';
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const CAL_DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const APP_TITLE = 'Fitness Dashboard';
+  const GEAR_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
   function itemsFor(plan) {
     const list = [{ text: 'Morning stretch', sub: MORNING_SUB, loggable: false }];
@@ -256,7 +324,7 @@
   }
 
   function emptyExerciseData(n) { return new Array(n).fill(null).map(() => ({ sets: '', reps: '', weight: '' })); }
-  function baseEntry() { return { calories: null, protein: null, carbs: null, fat: null, menuText: '', menuBreakdown: null, notes: '' }; }
+  function baseEntry() { return { calories: null, protein: null, carbs: null, fat: null, menuText: '', menuBreakdown: null, notes: '', formRows: 0 }; }
   function emptyEntry(n) { return Object.assign(baseEntry(), { checks: new Array(n).fill(false), exerciseData: emptyExerciseData(n) }); }
 
   // Keeps whatever overlaps, so changing a day's plan doesn't wipe what was logged.
@@ -413,6 +481,9 @@
   let streak = 0;
   const savingDates = new Set();
   const failedDates = new Set();
+  let menuOpen = false;
+  let calendarOpen = false;
+  let calendarMonth = null;
 
   function getEntry(dateStr, d) {
     const n = itemsFor(DAY_PLANS[d.getDay()]).length;
@@ -469,23 +540,84 @@
     streak = s;
   }
 
-  function mergeFormResponses(formResponsesRaw) {
+  function formFields(row) {
+    const exerciseKey = findKey(row, h => h.includes('exercise'));
+    const foodKey = findKey(row, h => h.includes('eat') || h.includes('food') || h.includes('menu') || h.includes('meal'));
+    const notesKey = findKey(row, h => h.includes('note'));
+    return {
+      exercise: exerciseKey ? String(row[exerciseKey] || '').trim() : '',
+      food: foodKey ? String(row[foodKey] || '').trim() : '',
+      notes: notesKey ? String(row[notesKey] || '').trim() : ''
+    };
+  }
+
+  function joinParts(parts, sep) { return parts.filter(Boolean).join(sep); }
+
+  // One day can have several form entries — a response per meal, say. They're
+  // grouped by date so the day reads as one list rather than only the first one.
+  function groupFormsByDate(formResponsesRaw) {
+    const byDate = {};
     (formResponsesRaw || []).forEach(row => {
       const dateKey = findKey(row, h => h.includes('date'));
       if (!dateKey || !row[dateKey]) return;
       const d = parseFlexibleDate(String(row[dateKey]));
       if (!d) return;
       const dateStr = dateKeyPart(d);
-      if (allData[dateStr]) return; // Don't touch a date that already has an entry — keeps manual edits safe.
-      const exerciseKey = findKey(row, h => h.includes('exercise'));
-      const foodKey = findKey(row, h => h.includes('eat') || h.includes('food') || h.includes('menu') || h.includes('meal'));
-      const notesKey = findKey(row, h => h.includes('note'));
-      allData[dateStr] = buildEntryFromFormFields(
-        dateStr,
-        exerciseKey ? row[exerciseKey] : '',
-        foodKey ? row[foodKey] : '',
-        notesKey ? row[notesKey] : ''
-      );
+      (byDate[dateStr] = byDate[dateStr] || []).push(formFields(row));
+    });
+    return byDate;
+  }
+
+  function mergeFormResponses(formResponsesRaw) {
+    const byDate = groupFormsByDate(formResponsesRaw);
+    Object.keys(byDate).forEach(dateStr => {
+      const rows = byDate[dateStr];
+      const existing = allData[dateStr];
+
+      if (!existing) {
+        const entry = buildEntryFromFormFields(
+          dateStr,
+          joinParts(rows.map(r => r.exercise), ', '),
+          joinParts(rows.map(r => r.food), ', '),
+          joinParts(rows.map(r => r.notes), ' | ')
+        );
+        entry.formRows = rows.length;
+        allData[dateStr] = entry;
+        saveEntry(dateStr);
+        return;
+      }
+
+      // Form sheets only ever gain rows, so anything past the count we already
+      // folded in is new. Appending keeps manual edits intact.
+      const merged = existing.formRows || 0;
+      if (rows.length <= merged) return;
+      const fresh = rows.slice(merged);
+      const entry = normalizeEntry(existing, itemsFor(DAY_PLANS[new Date(dateStr + 'T00:00:00').getDay()]).length);
+
+      const newFood = joinParts(fresh.map(r => r.food), ', ');
+      if (newFood) {
+        entry.menuText = joinParts([entry.menuText, newFood], ', ');
+        entry.menuBreakdown = null;
+      }
+      const newNotes = joinParts(fresh.map(r => r.notes), ' | ');
+      if (newNotes) entry.notes = joinParts([entry.notes, newNotes], ' | ');
+
+      const newExercise = joinParts(fresh.map(r => r.exercise), ', ');
+      if (newExercise) {
+        const list = itemsFor(DAY_PLANS[new Date(dateStr + 'T00:00:00').getDay()]);
+        const parsed = parseExerciseList(newExercise, list);
+        parsed.checks.forEach((c, i) => { if (c) entry.checks[i] = true; });
+        parsed.exerciseData.forEach((ed, i) => {
+          const cur = entry.exerciseData[i];
+          if ((ed.sets || ed.reps || ed.weight) && !(cur.sets || cur.reps || cur.weight)) entry.exerciseData[i] = ed;
+        });
+        if (parsed.unmatched.length) {
+          entry.notes = joinParts([entry.notes, 'Unmatched from form: ' + parsed.unmatched.join('; ')], ' | ');
+        }
+      }
+
+      entry.formRows = rows.length;
+      allData[dateStr] = entry;
       saveEntry(dateStr);
     });
   }
@@ -648,7 +780,7 @@
   }
 
   function importCSV(file) {
-    importing = true; toastMessage = null; render();
+    importing = true; toastMessage = null; menuOpen = false; render();
     file.text().then(text => {
       const rows = parseCSV(text);
       if (!rows.length) throw new Error('empty');
@@ -773,7 +905,7 @@
 
   function renderSetupScreen() {
     root.innerHTML =
-      '<div class="ft-header"><p class="ft-title">Your Week</p><p class="ft-subtitle">Connect your Google Sheet to get started</p></div>' +
+      '<div class="ft-header"><p class="ft-title">' + APP_TITLE + '</p><p class="ft-subtitle">Connect your Google Sheet to get started</p></div>' +
       '<div class="ft-setup">' +
       '<h2>Connect your Sheet</h2>' +
       '<p>Deploy the Code.gs script bound to your Sheet as a Web App (Execute as: Me, Access: Anyone), then paste the URL it gives you. Both fields are saved in this browser only.</p>' +
@@ -872,10 +1004,50 @@
     return h;
   }
 
+  function renderCalendar() {
+    const first = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    const last = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+    const gridStart = getMonday(first);
+    const endKey = dateKeyPart(addDays(getMonday(last), 6));
+    const weekEnd = addDays(weekStart, 7);
+
+    let h = '<div class="ft-backdrop" data-cal-backdrop="1">';
+    h += '<div class="ft-modal" role="dialog" aria-modal="true" aria-label="Month view">';
+    h += '<div class="ft-cal-head">';
+    h += '<button class="ft-navbtn" data-cal-nav="-1" aria-label="Previous month">‹</button>';
+    h += '<div class="ft-cal-month">' + first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + '</div>';
+    h += '<button class="ft-navbtn" data-cal-nav="1" aria-label="Next month">›</button>';
+    h += '</div><div class="ft-cal-grid">';
+    CAL_DOW.forEach(d => { h += '<div class="ft-cal-dow">' + d + '</div>'; });
+
+    let cursor = new Date(gridStart);
+    while (true) {
+      const dateStr = dateKeyPart(cursor);
+      const n = itemsFor(DAY_PLANS[cursor.getDay()]).length;
+      const pct = n ? Math.round((countChecks(dateStr, n) / n) * 100) : 0;
+      const cls = ['ft-cal-cell'];
+      if (cursor.getMonth() !== first.getMonth()) cls.push('is-other');
+      if (sameDate(cursor, today)) cls.push('is-today');
+      if (cursor >= weekStart && cursor < weekEnd) cls.push('in-week');
+      h += '<button class="' + cls.join(' ') + '" data-cal-day="' + dateStr + '"' +
+           ' aria-label="' + cursor.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + pct + '% done">';
+      h += '<span class="ft-cal-ring" style="--pct:' + pct + '"><span class="ft-cal-ring-inner">' + cursor.getDate() + '</span></span>';
+      h += '</button>';
+      if (dateStr === endKey) break;
+      cursor = addDays(cursor, 1);
+    }
+
+    h += '</div><div class="ft-cal-foot">';
+    h += '<span class="ft-cal-legend">Ring shows checklist done</span>';
+    h += '<button class="ft-cal-close" data-cal-close="1">Close</button>';
+    h += '</div></div></div>';
+    return h;
+  }
+
   function render() {
     if (!gasUrl) { renderSetupScreen(); return; }
     if (!dataLoaded) {
-      root.innerHTML = '<div class="ft-header"><p class="ft-title">Your Week</p></div><div class="ft-loading">Loading from your Sheet…</div>';
+      root.innerHTML = '<div class="ft-header"><p class="ft-title">' + APP_TITLE + '</p></div><div class="ft-loading">Loading from your Sheet…</div>';
       return;
     }
 
@@ -883,10 +1055,26 @@
     const rangeStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + wEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const pct = weekPct();
 
-    let html = '<div class="ft-header"><p class="ft-title">Your Week</p><p class="ft-subtitle">135 → 120 lb · build strength · steady waist loss</p></div>';
-
     const syncLabel = syncing ? 'Syncing…' : (lastSynced ? 'Synced ' + lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not synced yet');
-    html += '<div class="ft-sync-row">' + syncLabel + ' · <button class="ft-sync-btn" data-action="sync"' + (syncing ? ' disabled' : '') + '>Sync now</button> · <button class="ft-settings-btn" data-action="settings">Settings</button></div>';
+
+    let html = '<div class="ft-topbar"><span class="ft-spacer"></span>';
+    html += '<p class="ft-title">' + APP_TITLE + '</p>';
+    html += '<div class="ft-menu-wrap">';
+    html += '<button class="ft-gear' + (syncing ? ' is-busy' : '') + '" data-action="menu" aria-label="Settings" aria-expanded="' + menuOpen + '">' + GEAR_ICON + '</button>';
+    if (menuOpen) {
+      html += '<div class="ft-menu">';
+      html += '<div class="ft-menu-status">' + esc(syncLabel) + '</div>';
+      html += '<button class="ft-menu-item" data-action="sync"' + (syncing ? ' disabled' : '') + '>Sync now</button>';
+      html += '<div class="ft-menu-sep"></div>';
+      html += '<button class="ft-menu-item" data-action="export"' + (exporting ? ' disabled' : '') + '>' + (exporting ? 'Preparing CSV…' : 'Export CSV') + '</button>';
+      html += '<label class="ft-menu-item" for="ft-import-input">' + (importing ? 'Importing…' : 'Import CSV') + '</label>';
+      html += '<input type="file" accept=".csv" id="ft-import-input" style="display:none;"' + (importing ? ' disabled' : '') + '>';
+      html += '<div class="ft-menu-sep"></div>';
+      html += '<button class="ft-menu-item is-danger" data-action="settings">Disconnect Sheet</button>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    if (menuOpen) html += '<div class="ft-menu-backdrop" data-close-menu="1"></div>';
 
     if (loadError) html += '<div class="ft-toast ft-toast-error">' + esc(loadError) + '</div>';
     if (toastMessage) html += '<div class="ft-toast ft-toast-' + toastMessage.type + '">' + esc(toastMessage.text) + '</div>';
@@ -902,7 +1090,7 @@
 
     html += '<div class="ft-card ft-weekbar">';
     html += '<button class="ft-navbtn" data-action="prev" aria-label="Previous week">‹</button>';
-    html += '<div class="ft-weekrange">' + rangeStr + '<span>tap a day to log it</span></div>';
+    html += '<button class="ft-weekrange" data-action="calendar">' + rangeStr + '<span>tap for month view</span></button>';
     html += '<button class="ft-navbtn" data-action="next" aria-label="Next week">›</button>';
     html += '</div>';
 
@@ -912,12 +1100,9 @@
     html += '<div class="ft-streak">current streak<br><b>' + streak + (streak === 1 ? ' day' : ' days') + '</b></div>';
     html += '</div>';
 
-    html += '<div class="ft-export-row"><button class="ft-export-btn" data-action="export"' + (exporting ? ' disabled' : '') + '>' + (exporting ? 'Preparing CSV…' : 'Export CSV') + '</button>';
-    html += '<label class="ft-export-btn" for="ft-import-input">' + (importing ? 'Importing…' : 'Import CSV') + '</label>';
-    html += '<input type="file" accept=".csv" id="ft-import-input" style="display:none;"' + (importing ? ' disabled' : '') + '>';
-    html += '</div>';
-
     for (let i = 0; i < 7; i++) html += renderDay(i);
+
+    if (calendarOpen) html += renderCalendar();
 
     root.innerHTML = html;
     attachHandlers();
@@ -934,14 +1119,58 @@
 
     root.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.action === 'export') { exportCSV(); return; }
-        if (btn.dataset.action === 'sync') { manualSync(); return; }
-        if (btn.dataset.action === 'settings') {
-          if (confirm('Disconnect from this Sheet? You can reconnect (or connect a different one) afterward.')) clearGasUrl();
+        const action = btn.dataset.action;
+        if (action === 'menu') { menuOpen = !menuOpen; render(); return; }
+        if (action === 'calendar') {
+          calendarOpen = true;
+          calendarMonth = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
+          render();
           return;
         }
+        if (action === 'export') { menuOpen = false; exportCSV(); return; }
+        if (action === 'sync') { menuOpen = false; manualSync(); return; }
+        if (action === 'settings') {
+          menuOpen = false;
+          if (confirm('Disconnect from this Sheet? You can reconnect (or connect a different one) afterward.')) clearGasUrl();
+          else render();
+          return;
+        }
+        if (action === 'prev' || action === 'next') {
+          toastMessage = null;
+          weekStart = addDays(weekStart, action === 'prev' ? -7 : 7);
+          render();
+        }
+      });
+    });
+
+    const menuBackdrop = root.querySelector('[data-close-menu]');
+    if (menuBackdrop) menuBackdrop.addEventListener('click', () => { menuOpen = false; render(); });
+
+    const calBackdrop = root.querySelector('[data-cal-backdrop]');
+    if (calBackdrop) {
+      calBackdrop.addEventListener('click', (ev) => {
+        if (ev.target === calBackdrop) { calendarOpen = false; render(); }
+      });
+    }
+    const calClose = root.querySelector('[data-cal-close]');
+    if (calClose) calClose.addEventListener('click', () => { calendarOpen = false; render(); });
+
+    root.querySelectorAll('[data-cal-nav]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const step = parseInt(btn.dataset.calNav, 10);
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + step, 1);
+        render();
+      });
+    });
+
+    root.querySelectorAll('[data-cal-day]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = new Date(btn.dataset.calDay + 'T00:00:00');
+        weekStart = getMonday(d);
+        openIdx = 0;
+        for (let i = 0; i < 7; i++) if (sameDate(addDays(weekStart, i), d)) openIdx = i;
+        calendarOpen = false;
         toastMessage = null;
-        weekStart = addDays(weekStart, btn.dataset.action === 'prev' ? -7 : 7);
         render();
       });
     });
@@ -1034,6 +1263,12 @@
       });
     });
   }
+
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (calendarOpen) { calendarOpen = false; render(); }
+    else if (menuOpen) { menuOpen = false; render(); }
+  });
 
   initialLoad();
 })();
