@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness Dashboard</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #FAFAFB; color-scheme: light; }
+  #ft-app {
+    --bg: #FAFAFB;
+    --surface: #FFFFFF;
+    --border: #EDEDF0;
+    --text: #2B2B30;
+    --text-soft: #6C6C74;
+    --text-mute: #A0A0A8;
+
+    --accent: #5B9BD5;
+    --accent-soft: #E4F0FB;
+    --ring: #9CC8EC;
+    --track: #EFEFF2;
+
+    --chip-pink-bg: #FCE4EC;   --chip-pink-fg: #A85277;
+    --chip-blue-bg: #E4F0FB;   --chip-blue-fg: #3D75A6;
+    --chip-yellow-bg: #FBF4D9; --chip-yellow-fg: #8A7524;
+    --chip-neutral-bg: #F0F0F2; --chip-neutral-fg: #77777F;
+
+    --danger: #C56B6B;
+    --danger-soft: #FBE7E7;
+
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    max-width: 540px;
+    margin: 0 auto;
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  #ft-app * { box-sizing: border-box; }
+
+  .ft-header { text-align: center; padding: 4px 0 14px; }
+  .ft-title { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  .ft-subtitle { font-size: 12.5px; color: var(--text-soft); margin: 4px 0 0; }
+
+  .ft-sync-row { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; color: var(--text-mute); padding: 0 0 12px; }
+  .ft-sync-btn, .ft-settings-btn {
+    font-size: 11px; font-weight: 600; color: var(--accent);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 3px 9px; cursor: pointer;
+  }
+  .ft-settings-btn { color: var(--text-mute); border-color: transparent; text-decoration: underline; }
+  .ft-sync-btn:disabled { opacity: 0.6; }
+
+  .ft-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 8px;
+  }
+
+  .ft-weekbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+  .ft-navbtn {
+    background: none; border: none; cursor: pointer; font-size: 16px;
+    color: var(--text-soft); padding: 4px 10px; border-radius: 8px; line-height: 1;
+  }
+  .ft-navbtn:hover { background: var(--track); color: var(--text); }
+  .ft-weekrange { flex: 1; text-align: center; font-size: 13px; font-weight: 600; }
+  .ft-weekrange span { display: block; font-size: 11px; font-weight: 400; color: var(--text-mute); margin-top: 1px; }
+
+  .ft-summary { display: flex; align-items: center; gap: 12px; padding: 12px; }
+  .ft-ring {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(var(--ring) calc(var(--pct) * 1%), var(--track) 0);
+  }
+  .ft-ring-inner {
+    width: 39px; height: 39px; border-radius: 50%; background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .ft-ring-label { font-size: 12.5px; color: var(--text-soft); }
+  .ft-ring-label b { color: var(--text); font-weight: 650; }
+  .ft-streak { margin-left: auto; text-align: right; font-size: 12px; color: var(--text-soft); }
+  .ft-streak b { color: var(--chip-pink-fg); font-weight: 700; }
+
+  .ft-export-row { text-align: center; padding: 0 2px 12px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .ft-export-btn {
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    background: none; border: 1px solid var(--border); border-radius: 9px;
+    padding: 6px 14px; cursor: pointer; display: inline-block;
+  }
+  .ft-export-btn:hover { background: var(--accent-soft); }
+  .ft-export-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .ft-confirm-banner { border: 1px solid var(--accent); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; background: var(--surface); }
+  .ft-confirm-banner p { margin: 0 0 9px; font-size: 13px; }
+  .ft-confirm-actions { display: flex; gap: 8px; }
+  .ft-confirm-actions button { font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 7px 14px; cursor: pointer; border: none; }
+  .ft-confirm-yes { background: var(--accent); color: #fff; }
+  .ft-confirm-no { background: var(--track); color: var(--text-soft); }
+
+  .ft-toast { border-radius: 10px; padding: 9px 12px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; }
+  .ft-toast-success { background: var(--accent-soft); color: var(--chip-blue-fg); }
+  .ft-toast-error { background: var(--danger-soft); color: var(--danger); }
+
+  .ft-unsaved {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--danger-soft); color: var(--danger);
+    border-radius: 10px; padding: 8px 12px; margin-bottom: 8px;
+    font-size: 12.5px; font-weight: 600;
+  }
+  .ft-unsaved button {
+    margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--danger);
+    background: none; border: 1px solid currentColor; border-radius: 7px;
+    padding: 3px 10px; cursor: pointer;
+  }
+
+  .ft-day { overflow: hidden; }
+  .ft-day-head { display: flex; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; user-select: none; }
+  .ft-day-head:hover { background: var(--track); }
+  .ft-day-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ft-date-badge { width: 38px; flex-shrink: 0; text-align: center; }
+  .ft-date-badge .dow { font-size: 10.5px; color: var(--text-mute); font-weight: 600; }
+  .ft-date-badge .dom { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ft-day.is-today .dom { color: var(--accent); }
+  .ft-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+  .ft-chip { font-size: 11px; padding: 3px 8px; border-radius: 7px; font-weight: 600; white-space: nowrap; }
+  .ft-daymini { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .ft-minipct { font-size: 12px; font-weight: 600; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+  .ft-caret { font-size: 10px; color: var(--text-mute); transition: transform 0.2s ease; }
+  .ft-day.is-open .ft-caret { transform: rotate(90deg); }
+
+  .ft-day-body { padding: 0 14px 14px; display: none; }
+  .ft-day.is-open .ft-day-body { display: block; }
+  .ft-note { font-size: 12px; color: var(--text-soft); font-style: italic; margin: 0 0 10px; }
+
+  .ft-check-row { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; }
+  .ft-check-row input[type="checkbox"] { accent-color: var(--accent); width: 17px; height: 17px; margin-top: 1px; flex-shrink: 0; cursor: pointer; }
+  .ft-check-text { font-size: 13.5px; line-height: 1.3; }
+  .ft-check-row.checked .ft-check-text { color: var(--text-mute); text-decoration: line-through; }
+  .ft-check-sub { font-size: 11.5px; color: var(--text-mute); margin-top: 1px; }
+
+  .ft-set-row { display: flex; align-items: flex-end; gap: 6px; margin: 2px 0 4px 26px; }
+  .ft-set-field { display: flex; flex-direction: column; }
+  .ft-set-field label { font-size: 9.5px; color: var(--text-mute); font-weight: 600; margin-bottom: 2px; }
+  .ft-set-field input { width: 48px; font-size: 12.5px; padding: 4px 5px; border-radius: 7px; border: 1px solid var(--border); text-align: center; font-variant-numeric: tabular-nums; background: var(--bg); }
+  .ft-set-x { align-self: center; margin-bottom: 6px; font-size: 12px; color: var(--text-mute); }
+
+  .ft-cal-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .ft-cal-label { font-size: 13px; font-weight: 600; }
+  .ft-cal-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .ft-cal-input { width: 76px; font-size: 13.5px; padding: 5px 7px; border-radius: 8px; border: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+  .ft-cal-target { font-size: 11.5px; color: var(--text-mute); }
+
+  .ft-macro-row { display: flex; gap: 8px; margin-top: 8px; }
+  .ft-macro-item { flex: 1; text-align: center; background: var(--bg); border-radius: 8px; padding: 5px 4px; }
+  .ft-macro-item label { display: block; font-size: 10px; color: var(--text-mute); font-weight: 600; margin-bottom: 3px; }
+  .ft-macro-item input { width: 100%; font-size: 13px; padding: 3px 2px; border: none; background: none; text-align: center; font-variant-numeric: tabular-nums; color: var(--text); }
+
+  .ft-menu-box { margin-top: 10px; }
+  .ft-menu-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; }
+  .ft-textarea { width: 100%; font-size: 13px; padding: 8px 9px; border-radius: 9px; border: 1px solid var(--border); font-family: inherit; resize: vertical; min-height: 44px; background: var(--bg); margin-bottom: 4px; }
+  .ft-estimate-btn { margin-top: 7px; font-size: 12.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: none; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  .ft-estimate-btn:hover { filter: brightness(0.97); }
+  .ft-estimate-btn:disabled { opacity: 0.6; cursor: default; }
+  .ft-menu-error { font-size: 11.5px; color: var(--danger); margin-top: 6px; }
+  .ft-breakdown { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+  .ft-breakdown-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-soft); padding: 1px 0; }
+  .ft-breakdown-row b { color: var(--text); font-weight: 600; }
+  .ft-breakdown-total { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); }
+
+  .ft-clear-day { margin-top: 10px; background: none; border: none; font-size: 11.5px; color: var(--text-mute); cursor: pointer; padding: 0; text-decoration: underline; }
+  .ft-clear-day:hover { color: var(--text-soft); }
+
+  .ft-loading { text-align: center; color: var(--text-mute); font-size: 13px; padding: 30px 0; }
+
+  .ft-setup { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .ft-setup h2 { font-size: 15px; margin: 0 0 8px; }
+  .ft-setup p { font-size: 13px; color: var(--text-soft); line-height: 1.5; }
+  .ft-setup input { width: 100%; font-size: 13px; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--border); margin: 10px 0; font-family: inherit; }
+  .ft-setup button { font-size: 13px; font-weight: 600; background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="ft-app"></div>
+
+<script>
+(function () {
+  const root = document.getElementById('ft-app');
+
+  // Sheet address and access code, saved per-device in this browser only —
+  // keeping the code out of the published page means the page alone is useless.
+  const GAS_URL_KEY = 'ft_gas_url';
+  const GAS_TOKEN_KEY = 'ft_gas_token';
+  let gasUrl = localStorage.getItem(GAS_URL_KEY) || '';
+  let gasToken = localStorage.getItem(GAS_TOKEN_KEY) || '';
+
+  const DAY_PLANS = {
+    0: { chips: [{ l: 'Full rest', t: 'neutral' }], note: 'Recovery day', items: [], preStretch: false, target: 1450 },
+    1: { chips: [{ l: 'Climb', t: 'blue' }, { l: 'Legs', t: 'pink' }], note: 'Right after climbing, 15–20 min', items: [
+      { name: 'Climbed', loggable: false }, { name: 'Leg press', loggable: true }, { name: 'Leg extension', loggable: true }, { name: 'Leg curl', loggable: true }, { name: 'Calf raise', loggable: true }
+    ], preStretch: true, target: 1600 },
+    2: { chips: [{ l: 'Upper body + core', t: 'pink' }], note: 'Push to full fatigue', items: [
+      { name: 'Chest press', loggable: true }, { name: 'Lat pulldown', loggable: true }, { name: 'Seated row', loggable: true }, { name: 'Shoulder press', loggable: true }, { name: 'Ab machine / plank', loggable: true }
+    ], preStretch: true, target: 1650 },
+    3: { chips: [{ l: 'Pole only', t: 'yellow' }], note: 'Busy day — no added lifting', items: [
+      { name: 'Pole practice', loggable: false }
+    ], preStretch: false, target: 1500 },
+    4: { chips: [{ l: 'Climb', t: 'blue' }, { l: 'Legs', t: 'pink' }], note: 'Right after climbing, 15–20 min', items: [
+      { name: 'Climbed', loggable: false }, { name: 'Leg press', loggable: true }, { name: 'Leg extension', loggable: true }, { name: 'Leg curl', loggable: true }, { name: 'Calf raise', loggable: true }
+    ], preStretch: true, target: 1600 },
+    5: { chips: [{ l: 'Flexible', t: 'neutral' }], note: 'Rest, or squeeze in whatever fits', items: [
+      { name: 'Something today (optional)', loggable: false }
+    ], preStretch: false, target: 1450 },
+    6: { chips: [{ l: 'Row/run', t: 'blue' }, { l: 'Swim', t: 'blue' }], note: 'Row or run first, stay dry — swim after, one shower', items: [
+      { name: 'Row or run', loggable: false }, { name: 'Swim ~20 min', loggable: false }
+    ], preStretch: true, target: 1600 },
+  };
+  const MORNING_SUB = 'Cat–cow, low lunge + twist, shoulder rolls, cross-body stretch, forward fold';
+  const PRE_SUB = 'Arm circles, walking lunges + twist, leg swings, hip circles';
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  function itemsFor(plan) {
+    const list = [{ text: 'Morning stretch', sub: MORNING_SUB, loggable: false }];
+    if (plan.preStretch) list.push({ text: 'Pre-workout stretch', sub: PRE_SUB, loggable: false });
+    plan.items.forEach(it => list.push({ text: it.name, loggable: !!it.loggable }));
+    return list;
+  }
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+  function toNumOrNull(raw) {
+    if (raw === '' || raw === null || raw === undefined) return null;
+    const n = Number(raw);
+    return isNaN(n) ? null : n;
+  }
+
+  function dateKeyPart(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function sameDate(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function getMonday(d) {
+    const x = new Date(d); const day = x.getDay(); const diff = day === 0 ? -6 : 1 - day;
+    x.setDate(x.getDate() + diff); x.setHours(0, 0, 0, 0); return x;
+  }
+  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+  function parseFlexibleDate(raw) {
+    const s = (raw || '').trim();
+    if (!s) return null;
+    let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]); if (!isNaN(d.getTime())) return d; }
+    m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (m) { const d = new Date(+m[3], +m[1] - 1, +m[2]); if (!isNaN(d.getTime())) return d; }
+    const generic = new Date(s);
+    return isNaN(generic.getTime()) ? null : generic;
+  }
+
+  function emptyExerciseData(n) { return new Array(n).fill(null).map(() => ({ sets: '', reps: '', weight: '' })); }
+  function baseEntry() { return { calories: null, protein: null, carbs: null, fat: null, menuText: '', menuBreakdown: null, notes: '' }; }
+  function emptyEntry(n) { return Object.assign(baseEntry(), { checks: new Array(n).fill(false), exerciseData: emptyExerciseData(n) }); }
+
+  // Keeps whatever overlaps, so changing a day's plan doesn't wipe what was logged.
+  function resize(arr, n, fill, blank) {
+    const out = blank(n);
+    if (Array.isArray(arr)) for (let i = 0; i < n && i < arr.length; i++) out[i] = fill(arr[i]);
+    return out;
+  }
+
+  function toSetRow(v) {
+    return (v && typeof v === 'object')
+      ? { sets: v.sets || '', reps: v.reps || '', weight: v.weight || '' }
+      : { sets: '', reps: '', weight: '' };
+  }
+
+  function normalizeEntry(e, n) {
+    e = e || {};
+    const base = baseEntry();
+    for (const k in base) if (e[k] === undefined) e[k] = base[k];
+    e.checks = resize(e.checks, n, v => !!v, len => new Array(len).fill(false));
+    e.exerciseData = resize(e.exerciseData, n, toSetRow, emptyExerciseData);
+    return e;
+  }
+
+  // Matches free text like "Leg press 3x10 @135, Calf raise, Climbed" against the day's item list.
+  function parseExerciseList(raw, list) {
+    const checks = new Array(list.length).fill(false);
+    const exerciseData = emptyExerciseData(list.length);
+    const unmatched = [];
+    raw.split(',').map(s => s.trim()).filter(Boolean).forEach(token => {
+      const tokenLower = token.toLowerCase();
+      let matchIdx = -1, matchLen = 0, matchAt = -1;
+      list.forEach((it, i) => {
+        const t = it.text.toLowerCase();
+        if (tokenLower.startsWith(t) && t.length > matchLen) { matchIdx = i; matchLen = t.length; matchAt = 0; }
+      });
+      if (matchIdx === -1) {
+        list.forEach((it, i) => {
+          const t = it.text.toLowerCase();
+          const at = tokenLower.indexOf(t);
+          if (at !== -1 && t.length > matchLen) { matchIdx = i; matchLen = t.length; matchAt = at; }
+        });
+      }
+      if (matchIdx === -1) { unmatched.push(token); return; }
+      checks[matchIdx] = true;
+      let rest = (token.slice(0, matchAt) + token.slice(matchAt + matchLen)).trim().replace(/^[:\-–]\s*/, '');
+      if (rest && list[matchIdx].loggable) {
+        let sets = '', reps = '', weight = '';
+        const setsReps = rest.match(/(\d+)\s*x\s*(\d+)/i);
+        if (setsReps) { sets = setsReps[1]; reps = setsReps[2]; rest = rest.replace(setsReps[0], ''); }
+        const weightMatch = rest.match(/(\d+(?:\.\d+)?)/);
+        if (weightMatch) weight = weightMatch[1];
+        if (sets || reps || weight) exerciseData[matchIdx] = { sets, reps, weight };
+      }
+    });
+    return { checks, exerciseData, unmatched };
+  }
+
+  function buildEntryFromFormFields(dateStr, exerciseRaw, foodRaw, notesRaw) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const list = itemsFor(DAY_PLANS[d.getDay()]);
+    const entry = emptyEntry(list.length);
+    entry.menuText = foodRaw || '';
+    entry.notes = notesRaw || '';
+    if (exerciseRaw) {
+      const parsed = parseExerciseList(exerciseRaw, list);
+      entry.checks = parsed.checks;
+      entry.exerciseData = parsed.exerciseData;
+      if (parsed.unmatched.length) {
+        const um = 'Unmatched from form: ' + parsed.unmatched.join('; ');
+        entry.notes = entry.notes ? entry.notes + ' | ' + um : um;
+      }
+    }
+    return entry;
+  }
+
+  function findKey(row, testFn) { return Object.keys(row).find(k => testFn(k.toLowerCase())); }
+
+  // Reads use JSONP so no cross-origin setup is needed. Writes are a fire-and-forget POST.
+  function jsonpRequest(url) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'gascb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+      const script = document.createElement('script');
+      let done = false;
+      const cleanup = () => { delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); };
+      window[cbName] = (data) => { done = true; cleanup(); resolve(data); };
+      script.onerror = () => { if (!done) { cleanup(); reject(new Error('Could not reach the Google Sheet — check the URL and your connection.')); } };
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      document.body.appendChild(script);
+      setTimeout(() => { if (!done) { cleanup(); reject(new Error('Timed out contacting the Google Sheet.')); } }, 15000);
+    });
+  }
+
+  function withToken(url) {
+    if (!gasToken) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(gasToken);
+  }
+
+  function gasFetchAll() { return jsonpRequest(withToken(gasUrl)); }
+  function gasEstimate(text) {
+    return jsonpRequest(withToken(gasUrl + '?action=estimate&text=' + encodeURIComponent(text)));
+  }
+
+  // Whether the Sheet lets us read its reply to a save. Unknown until the first try.
+  let canReadSaveReply = null;
+
+  // Returns 'saved' (the Sheet confirmed it), 'assumed' (it went through but the
+  // reply couldn't be read), or 'failed'.
+  async function postToGas(body) {
+    const opts = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body };
+    if (canReadSaveReply !== false) {
+      try {
+        const res = await fetch(gasUrl, opts);
+        canReadSaveReply = true;
+        if (!res.ok) return 'failed';
+        const text = await res.text();
+        try {
+          const parsed = JSON.parse(text);
+          return parsed && parsed.ok === false ? 'failed' : 'saved';
+        } catch (e) {
+          return 'assumed';
+        }
+      } catch (e) {
+        // Fall through and try the send-and-hope version instead.
+      }
+    }
+    try {
+      await fetch(gasUrl, Object.assign({ mode: 'no-cors' }, opts));
+      if (canReadSaveReply === null) canReadSaveReply = false;
+      return 'assumed';
+    } catch (e) {
+      return 'failed';
+    }
+  }
+
+  function gasSave(dateStr, data) {
+    return postToGas(JSON.stringify({ action: 'save', token: gasToken, date: dateStr, data }));
+  }
+
+  let weekStart = getMonday(new Date());
+  let openIdx = -1;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let allData = {};
+  let dataLoaded = false;
+  let syncing = false;
+  let lastSynced = null;
+  let loadError = null;
+  let toastMessage = null;
+  let pendingImport = null;
+  let importing = false;
+  let exporting = false;
+  let estimating = {};
+  let estimateError = {};
+  let streak = 0;
+  const savingDates = new Set();
+  const failedDates = new Set();
+
+  function getEntry(dateStr, d) {
+    const n = itemsFor(DAY_PLANS[d.getDay()]).length;
+    if (!allData[dateStr]) allData[dateStr] = emptyEntry(n);
+    else allData[dateStr] = normalizeEntry(allData[dateStr], n);
+    return allData[dateStr];
+  }
+  function entryForKey(key) { return getEntry(key, new Date(key + 'T00:00:00')); }
+
+  function saveEntry(dateStr) {
+    const bannerWas = failedDates.size > 0;
+    savingDates.add(dateStr);
+    failedDates.delete(dateStr);
+    gasSave(dateStr, allData[dateStr]).then(result => {
+      savingDates.delete(dateStr);
+      if (result === 'failed') failedDates.add(dateStr);
+      if ((failedDates.size > 0) === bannerWas) return;
+      // Redrawing while a field has focus would discard what's being typed;
+      // the banner appears on the next redraw instead.
+      if (!root.contains(document.activeElement)) render();
+    });
+  }
+
+  function retryFailedSaves() {
+    const dates = Array.from(failedDates);
+    failedDates.clear();
+    render();
+    dates.forEach(saveEntry);
+  }
+
+  // Only counts the first n boxes, so an older entry saved under a longer
+  // checklist can't push a day past 100%.
+  function countChecks(dateStr, n) {
+    const e = allData[dateStr];
+    if (!e || !Array.isArray(e.checks)) return 0;
+    let c = 0;
+    for (let i = 0; i < n && i < e.checks.length; i++) if (e.checks[i]) c++;
+    return c;
+  }
+
+  function computeStreak() {
+    let s = 0;
+    let cursor = new Date(today);
+    const todayKey = dateKeyPart(today);
+    const todayTotal = itemsFor(DAY_PLANS[today.getDay()]).length;
+    const todayDone = todayTotal > 0 && countChecks(todayKey, todayTotal) === todayTotal;
+    if (!todayDone) cursor = addDays(cursor, -1);
+    while (true) {
+      const key = dateKeyPart(cursor);
+      const total = itemsFor(DAY_PLANS[cursor.getDay()]).length;
+      if (total > 0 && countChecks(key, total) === total) { s++; cursor = addDays(cursor, -1); }
+      else break;
+    }
+    streak = s;
+  }
+
+  function mergeFormResponses(formResponsesRaw) {
+    (formResponsesRaw || []).forEach(row => {
+      const dateKey = findKey(row, h => h.includes('date'));
+      if (!dateKey || !row[dateKey]) return;
+      const d = parseFlexibleDate(String(row[dateKey]));
+      if (!d) return;
+      const dateStr = dateKeyPart(d);
+      if (allData[dateStr]) return; // Don't touch a date that already has an entry — keeps manual edits safe.
+      const exerciseKey = findKey(row, h => h.includes('exercise'));
+      const foodKey = findKey(row, h => h.includes('eat') || h.includes('food') || h.includes('menu') || h.includes('meal'));
+      const notesKey = findKey(row, h => h.includes('note'));
+      allData[dateStr] = buildEntryFromFormFields(
+        dateStr,
+        exerciseKey ? row[exerciseKey] : '',
+        foodKey ? row[foodKey] : '',
+        notesKey ? row[notesKey] : ''
+      );
+      saveEntry(dateStr);
+    });
+  }
+
+  async function loadFromSheet() {
+    const res = await gasFetchAll();
+    // Without this a refused read looks like an empty week rather than an error.
+    if (res && res.ok === false) throw new Error(res.error || 'The Sheet refused the request.');
+    const incoming = res.dashboard || {};
+    // A day whose save is still in flight or has failed hasn't reached the Sheet
+    // yet, so keep what's on screen rather than letting the sync undo it.
+    savingDates.forEach(k => { if (allData[k]) incoming[k] = allData[k]; });
+    failedDates.forEach(k => { if (allData[k]) incoming[k] = allData[k]; });
+    allData = incoming;
+    mergeFormResponses(res.formResponses || []);
+    lastSynced = new Date();
+    computeStreak();
+  }
+
+  async function initialLoad() {
+    if (!gasUrl) { dataLoaded = true; render(); return; }
+    syncing = true; loadError = null; render();
+    try {
+      await loadFromSheet();
+    } catch (e) {
+      loadError = e.message || String(e);
+      computeStreak();
+    }
+    dataLoaded = true;
+    syncing = false;
+    let idxToday = -1;
+    for (let i = 0; i < 7; i++) if (sameDate(addDays(weekStart, i), today)) idxToday = i;
+    openIdx = idxToday >= 0 ? idxToday : 0;
+    render();
+  }
+
+  async function manualSync() {
+    syncing = true; toastMessage = null; render();
+    try {
+      await loadFromSheet();
+      toastMessage = { type: 'success', text: 'Synced with the Sheet.' };
+    } catch (e) {
+      toastMessage = { type: 'error', text: 'Sync failed: ' + (e.message || String(e)) };
+    }
+    syncing = false;
+    render();
+  }
+
+  function weekPct() {
+    let done = 0, total = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i);
+      const n = itemsFor(DAY_PLANS[d.getDay()]).length;
+      total += n;
+      done += countChecks(dateKeyPart(d), n);
+    }
+    return total ? Math.round((done / total) * 100) : 0;
+  }
+
+  function dayPct(dateStr, plan) {
+    const n = itemsFor(plan).length;
+    return n === 0 ? 0 : Math.round((countChecks(dateStr, n) / n) * 100);
+  }
+
+  async function estimateNutrition(dateStr, menuText) {
+    const text = (menuText || '').trim();
+    if (!text) { estimateError[dateStr] = 'Type what you ate first.'; render(); return; }
+    if (!gasUrl) { estimateError[dateStr] = 'Set up your Sheet connection first (Settings).'; render(); return; }
+    estimating[dateStr] = true; estimateError[dateStr] = null; render();
+    try {
+      const res = await gasEstimate(text);
+      if (!res || !res.ok) throw new Error((res && res.error) || 'Estimate failed.');
+      const totals = res.result && res.result.totals;
+      if (!totals || typeof totals.calories !== 'number') throw new Error('Unexpected response shape.');
+      const entry = entryForKey(dateStr);
+      entry.calories = Math.round(totals.calories);
+      entry.protein = typeof totals.protein_g === 'number' ? Math.round(totals.protein_g) : null;
+      entry.carbs = typeof totals.carbs_g === 'number' ? Math.round(totals.carbs_g) : null;
+      entry.fat = typeof totals.fat_g === 'number' ? Math.round(totals.fat_g) : null;
+      entry.menuBreakdown = Array.isArray(res.result.items) ? res.result.items : null;
+      entry.menuText = text;
+      saveEntry(dateStr);
+    } catch (e) {
+      estimateError[dateStr] = e.message || 'Could not estimate nutrition — try rephrasing or enter numbers manually.';
+    } finally {
+      estimating[dateStr] = false;
+      render();
+    }
+  }
+
+  // CSV export/import is a manual backup path.
+  function csvEscape(v) {
+    const s = v === null || v === undefined ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function parseCSV(text) {
+    const rows = []; let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''));
+  }
+
+  function exportCSV() {
+    exporting = true; render();
+    try {
+      const dates = Object.keys(allData).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+      const header = ['date', 'day_of_week', 'focus', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'completion_pct', 'items_completed', 'items_total', 'checklist_detail', 'exercise_log', 'menu_text', 'notes'];
+      const lines = [header.join(',')];
+      dates.forEach(dateStr => {
+        const v = allData[dateStr];
+        if (!v) return;
+        const d = new Date(dateStr + 'T00:00:00');
+        const plan = DAY_PLANS[d.getDay()];
+        const list = itemsFor(plan);
+        const total = list.length;
+        const done = (v.checks || []).filter(Boolean).length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        const detail = list.map((it, idx) => it.text + ':' + ((v.checks && v.checks[idx]) ? 1 : 0)).join('|');
+        const exLog = list.map((it, idx) => {
+          if (!it.loggable) return null;
+          const ed = (v.exerciseData && v.exerciseData[idx]) || {};
+          if (!ed.sets && !ed.reps && !ed.weight) return null;
+          return it.text + ':' + (ed.sets || '') + '-' + (ed.reps || '') + '-' + (ed.weight || '');
+        }).filter(Boolean).join('|');
+        const focus = plan.chips.map(c => c.l).join(' + ');
+        const row = [
+          dateStr, DOW[d.getDay()], focus,
+          v.calories != null ? v.calories : '',
+          v.protein != null ? v.protein : '',
+          v.carbs != null ? v.carbs : '',
+          v.fat != null ? v.fat : '',
+          pct, done, total, detail, exLog, v.menuText || '', v.notes || ''
+        ];
+        lines.push(row.map(csvEscape).join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fitness_tracker_export.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toastMessage = { type: 'success', text: 'CSV downloaded (' + dates.length + ' day(s)).' };
+    } catch (e) {
+      toastMessage = { type: 'error', text: 'Something went wrong preparing the CSV.' };
+    }
+    exporting = false; render();
+  }
+
+  function importCSV(file) {
+    importing = true; toastMessage = null; render();
+    file.text().then(text => {
+      const rows = parseCSV(text);
+      if (!rows.length) throw new Error('empty');
+      const header = rows[0].map(h => h.trim());
+      const byName = Object.create(null);
+      header.forEach((h, i) => { if (byName[h] === undefined) byName[h] = i; });
+
+      // Exact columns from our own export first, then looser guesses for a
+      // Google Form sheet, which names its columns as questions.
+      const col = {
+        date: byName.date, calories: byName.calories,
+        protein: byName.protein_g, carbs: byName.carbs_g, fat: byName.fat_g,
+        checklist: byName.checklist_detail, exerciseLog: byName.exercise_log,
+        exerciseText: undefined, menu: byName.menu_text, notes: byName.notes
+      };
+      header.forEach((h, i) => {
+        const hl = h.toLowerCase();
+        if (hl === 'timestamp') return;
+        if (col.date === undefined && hl.includes('date')) col.date = i;
+        if (col.checklist === undefined && col.exerciseText === undefined && hl.includes('exercise')) col.exerciseText = i;
+        if (col.menu === undefined && (hl.includes('eat') || hl.includes('food') || hl.includes('menu') || hl.includes('meal'))) col.menu = i;
+        if (col.notes === undefined && hl.includes('note')) col.notes = i;
+      });
+
+      if (col.date === undefined) throw new Error('no date column');
+      const dataRows = rows.slice(1).filter(r => r[col.date]);
+      if (!dataRows.length) throw new Error('no rows');
+      pendingImport = { dataRows, col };
+      importing = false;
+      render();
+    }).catch(() => {
+      importing = false;
+      toastMessage = { type: 'error', text: 'Could not read that file — make sure it has a column with dates in it.' };
+      render();
+    });
+  }
+
+  async function applyPendingImport() {
+    if (!pendingImport) return;
+    const { dataRows, col } = pendingImport;
+    importing = true; render();
+    const cell = (r, c) => (c !== undefined ? r[c] : '');
+    let saved = 0, failed = 0, skipped = 0;
+    for (const r of dataRows) {
+      const d = parseFlexibleDate(cell(r, col.date));
+      if (!d) { skipped++; continue; }
+      const dateStr = dateKeyPart(d);
+      const list = itemsFor(DAY_PLANS[d.getDay()]);
+      const entry = emptyEntry(list.length);
+      let unmatchedTokens = [];
+
+      const detail = cell(r, col.checklist);
+      if (detail) {
+        detail.split('|').forEach(pair => {
+          const li = pair.lastIndexOf(':');
+          if (li === -1) return;
+          const itemIdx = list.findIndex(it => it.text === pair.slice(0, li));
+          if (itemIdx !== -1) entry.checks[itemIdx] = pair.slice(li + 1) === '1';
+        });
+      } else if (cell(r, col.exerciseText)) {
+        const parsed = parseExerciseList(r[col.exerciseText], list);
+        entry.checks = parsed.checks;
+        entry.exerciseData = parsed.exerciseData;
+        unmatchedTokens = parsed.unmatched;
+      }
+
+      entry.calories = toNumOrNull(cell(r, col.calories));
+      entry.protein = toNumOrNull(cell(r, col.protein));
+      entry.carbs = toNumOrNull(cell(r, col.carbs));
+      entry.fat = toNumOrNull(cell(r, col.fat));
+      entry.menuText = cell(r, col.menu) || '';
+      entry.notes = cell(r, col.notes) || '';
+      if (unmatchedTokens.length) {
+        const um = 'Unmatched from form: ' + unmatchedTokens.join('; ');
+        entry.notes = entry.notes ? entry.notes + ' | ' + um : um;
+      }
+
+      const exLogRaw = cell(r, col.exerciseLog);
+      if (exLogRaw) {
+        exLogRaw.split('|').forEach(pair => {
+          const li = pair.lastIndexOf(':');
+          if (li === -1) return;
+          const itemIdx = list.findIndex(it => it.text === pair.slice(0, li));
+          if (itemIdx === -1) return;
+          const parts = pair.slice(li + 1).split('-');
+          entry.exerciseData[itemIdx] = { sets: parts[0] || '', reps: parts[1] || '', weight: parts[2] || '' };
+        });
+      }
+
+      allData[dateStr] = entry;
+      if (await gasSave(dateStr, entry) === 'failed') { failed++; failedDates.add(dateStr); }
+      else saved++;
+    }
+    computeStreak();
+    const parts = [];
+    if (saved) parts.push('Imported ' + saved + ' day(s).');
+    if (failed) parts.push(failed + ' failed to save.');
+    if (skipped) parts.push(skipped + ' row(s) had an unreadable date.');
+    toastMessage = {
+      type: (failed || skipped) ? 'error' : 'success',
+      text: parts.join(' ') || 'Nothing to import.'
+    };
+    pendingImport = null;
+    importing = false;
+    render();
+  }
+
+  function cancelPendingImport() { pendingImport = null; render(); }
+
+  function clearGasUrl() {
+    localStorage.removeItem(GAS_URL_KEY);
+    localStorage.removeItem(GAS_TOKEN_KEY);
+    gasUrl = '';
+    gasToken = '';
+    dataLoaded = false;
+    allData = {};
+    loadError = null;
+    savingDates.clear();
+    failedDates.clear();
+    render();
+  }
+
+  function renderSetupScreen() {
+    root.innerHTML =
+      '<div class="ft-header"><p class="ft-title">Your Week</p><p class="ft-subtitle">Connect your Google Sheet to get started</p></div>' +
+      '<div class="ft-setup">' +
+      '<h2>Connect your Sheet</h2>' +
+      '<p>Deploy the Code.gs script bound to your Sheet as a Web App (Execute as: Me, Access: Anyone), then paste the URL it gives you. Both fields are saved in this browser only.</p>' +
+      '<input id="ft-gas-input" type="text" placeholder="https://script.google.com/macros/s/.../exec">' +
+      '<input id="ft-token-input" type="password" placeholder="Access code (leave blank if you haven\'t set one)">' +
+      '<button id="ft-gas-save">Connect</button>' +
+      '</div>';
+    document.getElementById('ft-gas-save').addEventListener('click', () => {
+      const v = document.getElementById('ft-gas-input').value.trim();
+      if (!v) return;
+      const t = document.getElementById('ft-token-input').value.trim();
+      localStorage.setItem(GAS_URL_KEY, v);
+      localStorage.setItem(GAS_TOKEN_KEY, t);
+      gasUrl = v;
+      gasToken = t;
+      dataLoaded = false;
+      initialLoad();
+    });
+  }
+
+  function renderDay(i) {
+    const d = addDays(weekStart, i);
+    const dateStr = dateKeyPart(d);
+    const plan = DAY_PLANS[d.getDay()];
+    const list = itemsFor(plan);
+    const entry = getEntry(dateStr, d);
+    const isToday = sameDate(d, today);
+    const isOpen = openIdx === i;
+
+    let h = '<div class="ft-card ft-day' + (isOpen ? ' is-open' : '') + (isToday ? ' is-today' : '') + '">';
+    h += '<div class="ft-day-head" data-toggle="' + i + '" role="button" tabindex="0" aria-expanded="' + isOpen + '">';
+    h += '<div class="ft-date-badge"><div class="dow">' + DOW[d.getDay()] + '</div><div class="dom">' + d.getDate() + '</div></div>';
+    h += '<div class="ft-chips">';
+    plan.chips.forEach(c => { h += '<span class="ft-chip" style="background:var(--chip-' + c.t + '-bg);color:var(--chip-' + c.t + '-fg)">' + esc(c.l) + '</span>'; });
+    h += '</div>';
+    h += '<div class="ft-daymini"><span class="ft-minipct">' + dayPct(dateStr, plan) + '%</span><span class="ft-caret">▶</span></div>';
+    h += '</div>';
+
+    h += '<div class="ft-day-body">';
+    h += '<p class="ft-note">' + esc(plan.note) + '</p>';
+    h += '<textarea class="ft-textarea" data-notes-key="' + dateStr + '" placeholder="Notes for today (e.g. swapping pole for cardio, sore knee, etc.)">' + esc(entry.notes) + '</textarea>';
+
+    list.forEach((it, idx) => {
+      const checked = entry.checks[idx];
+      h += '<label class="ft-check-row' + (checked ? ' checked' : '') + '">';
+      h += '<input type="checkbox" data-key="' + dateStr + '" data-idx="' + idx + '"' + (checked ? ' checked' : '') + '>';
+      h += '<span><span class="ft-check-text">' + esc(it.text) + '</span>';
+      if (it.sub) h += '<div class="ft-check-sub">' + esc(it.sub) + '</div>';
+      h += '</span></label>';
+      if (it.loggable) {
+        const ed = entry.exerciseData[idx] || { sets: '', reps: '', weight: '' };
+        h += '<div class="ft-set-row">';
+        h += '<div class="ft-set-field"><label>Sets</label><input type="number" inputmode="numeric" data-ex-key="' + dateStr + '" data-ex-idx="' + idx + '" data-ex-field="sets" value="' + esc(ed.sets) + '"></div>';
+        h += '<span class="ft-set-x">×</span>';
+        h += '<div class="ft-set-field"><label>Reps</label><input type="number" inputmode="numeric" data-ex-key="' + dateStr + '" data-ex-idx="' + idx + '" data-ex-field="reps" value="' + esc(ed.reps) + '"></div>';
+        h += '<span class="ft-set-x">@</span>';
+        h += '<div class="ft-set-field"><label>Weight (lb)</label><input type="number" inputmode="numeric" data-ex-key="' + dateStr + '" data-ex-idx="' + idx + '" data-ex-field="weight" value="' + esc(ed.weight) + '"></div>';
+        h += '</div>';
+      }
+    });
+
+    h += '<div class="ft-cal-row"><span class="ft-cal-label">Calories</span><div class="ft-cal-input-wrap">';
+    h += '<input type="number" inputmode="numeric" class="ft-cal-input" placeholder="—" data-cal-key="' + dateStr + '" value="' + (entry.calories != null ? entry.calories : '') + '">';
+    h += '<span class="ft-cal-target">target ~' + plan.target.toLocaleString() + '</span></div></div>';
+
+    h += '<div class="ft-macro-row">';
+    h += '<div class="ft-macro-item"><label>Protein g</label><input type="number" inputmode="numeric" data-protein-key="' + dateStr + '" value="' + (entry.protein != null ? entry.protein : '') + '" placeholder="—"></div>';
+    h += '<div class="ft-macro-item"><label>Carbs g</label><input type="number" inputmode="numeric" data-carbs-key="' + dateStr + '" value="' + (entry.carbs != null ? entry.carbs : '') + '" placeholder="—"></div>';
+    h += '<div class="ft-macro-item"><label>Fat g</label><input type="number" inputmode="numeric" data-fat-key="' + dateStr + '" value="' + (entry.fat != null ? entry.fat : '') + '" placeholder="—"></div>';
+    h += '</div>';
+
+    const isEstimating = !!estimating[dateStr];
+    const errMsg = estimateError[dateStr];
+    h += '<div class="ft-menu-box">';
+    h += '<label class="ft-menu-label">Estimate calories from a menu</label>';
+    h += '<textarea class="ft-textarea" data-menu-key="' + dateStr + '" placeholder="e.g. chipotle chicken burrito bowl, chips and guac, horchata">' + esc(entry.menuText) + '</textarea>';
+    h += '<button class="ft-estimate-btn" data-estimate="' + dateStr + '"' + (isEstimating ? ' disabled' : '') + '>' + (isEstimating ? 'Looking it up…' : 'Estimate nutrition') + '</button>';
+    if (errMsg) h += '<div class="ft-menu-error">' + esc(errMsg) + '</div>';
+    if (entry.menuBreakdown && entry.menuBreakdown.length) {
+      h += '<div class="ft-breakdown">';
+      entry.menuBreakdown.forEach(it => {
+        const macroStr = [
+          typeof it.protein_g === 'number' ? it.protein_g + 'p' : null,
+          typeof it.carbs_g === 'number' ? it.carbs_g + 'c' : null,
+          typeof it.fat_g === 'number' ? it.fat_g + 'f' : null
+        ].filter(Boolean).join(' · ');
+        h += '<div class="ft-breakdown-row"><span>' + esc(it.name) + (macroStr ? ' <span style="color:var(--text-mute)">(' + esc(macroStr) + ')</span>' : '') + '</span><b>' + (Number(it.calories) || 0) + '</b></div>';
+      });
+      h += '<div class="ft-breakdown-total"><span>Total' + (entry.protein != null ? ' — ' + entry.protein + 'p ' + entry.carbs + 'c ' + entry.fat + 'f' : '') + '</span><span>' + (entry.calories != null ? entry.calories : '') + '</span></div>';
+      h += '</div>';
+    }
+    h += '</div>';
+
+    h += '<button class="ft-clear-day" data-clear="' + dateStr + '">Clear this day</button>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function render() {
+    if (!gasUrl) { renderSetupScreen(); return; }
+    if (!dataLoaded) {
+      root.innerHTML = '<div class="ft-header"><p class="ft-title">Your Week</p></div><div class="ft-loading">Loading from your Sheet…</div>';
+      return;
+    }
+
+    const wEnd = addDays(weekStart, 6);
+    const rangeStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + wEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const pct = weekPct();
+
+    let html = '<div class="ft-header"><p class="ft-title">Your Week</p><p class="ft-subtitle">135 → 120 lb · build strength · steady waist loss</p></div>';
+
+    const syncLabel = syncing ? 'Syncing…' : (lastSynced ? 'Synced ' + lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not synced yet');
+    html += '<div class="ft-sync-row">' + syncLabel + ' · <button class="ft-sync-btn" data-action="sync"' + (syncing ? ' disabled' : '') + '>Sync now</button> · <button class="ft-settings-btn" data-action="settings">Settings</button></div>';
+
+    if (loadError) html += '<div class="ft-toast ft-toast-error">' + esc(loadError) + '</div>';
+    if (toastMessage) html += '<div class="ft-toast ft-toast-' + toastMessage.type + '">' + esc(toastMessage.text) + '</div>';
+    if (failedDates.size) {
+      html += '<div class="ft-unsaved">' + failedDates.size + ' day(s) not saved to the Sheet' +
+              '<button data-retry-saves="1">Retry</button></div>';
+    }
+    if (pendingImport) {
+      html += '<div class="ft-confirm-banner"><p>Import ' + pendingImport.dataRows.length + ' day(s) from this file? This will overwrite any existing entries for those dates.</p>';
+      html += '<div class="ft-confirm-actions"><button class="ft-confirm-yes" data-confirm-import="1"' + (importing ? ' disabled' : '') + '>' + (importing ? 'Importing…' : 'Import') + '</button>';
+      html += '<button class="ft-confirm-no" data-cancel-import="1"' + (importing ? ' disabled' : '') + '>Cancel</button></div></div>';
+    }
+
+    html += '<div class="ft-card ft-weekbar">';
+    html += '<button class="ft-navbtn" data-action="prev" aria-label="Previous week">‹</button>';
+    html += '<div class="ft-weekrange">' + rangeStr + '<span>tap a day to log it</span></div>';
+    html += '<button class="ft-navbtn" data-action="next" aria-label="Next week">›</button>';
+    html += '</div>';
+
+    html += '<div class="ft-card ft-summary">';
+    html += '<div class="ft-ring" style="--pct:' + pct + '"><div class="ft-ring-inner">' + pct + '%</div></div>';
+    html += '<div class="ft-ring-label">checklist done<br><b>this week</b></div>';
+    html += '<div class="ft-streak">current streak<br><b>' + streak + (streak === 1 ? ' day' : ' days') + '</b></div>';
+    html += '</div>';
+
+    html += '<div class="ft-export-row"><button class="ft-export-btn" data-action="export"' + (exporting ? ' disabled' : '') + '>' + (exporting ? 'Preparing CSV…' : 'Export CSV') + '</button>';
+    html += '<label class="ft-export-btn" for="ft-import-input">' + (importing ? 'Importing…' : 'Import CSV') + '</label>';
+    html += '<input type="file" accept=".csv" id="ft-import-input" style="display:none;"' + (importing ? ' disabled' : '') + '>';
+    html += '</div>';
+
+    for (let i = 0; i < 7; i++) html += renderDay(i);
+
+    root.innerHTML = html;
+    attachHandlers();
+  }
+
+  function attachHandlers() {
+    const importInput = root.querySelector('#ft-import-input');
+    if (importInput) importInput.addEventListener('change', () => { if (importInput.files && importInput.files[0]) importCSV(importInput.files[0]); });
+
+    const confirmBtn = root.querySelector('[data-confirm-import]');
+    if (confirmBtn) confirmBtn.addEventListener('click', applyPendingImport);
+    const cancelBtn = root.querySelector('[data-cancel-import]');
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelPendingImport);
+
+    root.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.action === 'export') { exportCSV(); return; }
+        if (btn.dataset.action === 'sync') { manualSync(); return; }
+        if (btn.dataset.action === 'settings') {
+          if (confirm('Disconnect from this Sheet? You can reconnect (or connect a different one) afterward.')) clearGasUrl();
+          return;
+        }
+        toastMessage = null;
+        weekStart = addDays(weekStart, btn.dataset.action === 'prev' ? -7 : 7);
+        render();
+      });
+    });
+
+    const retryBtn = root.querySelector('[data-retry-saves]');
+    if (retryBtn) retryBtn.addEventListener('click', retryFailedSaves);
+
+    root.querySelectorAll('[data-toggle]').forEach(el => {
+      const toggle = () => {
+        const i = parseInt(el.dataset.toggle, 10);
+        openIdx = openIdx === i ? -1 : i;
+        toastMessage = null;
+        estimateError = {};
+        render();
+        const again = root.querySelector('[data-toggle="' + i + '"]');
+        if (again) again.focus();
+      };
+      el.addEventListener('click', toggle);
+      el.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(); }
+      });
+    });
+
+    root.querySelectorAll('input[type="checkbox"][data-key]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const key = cb.dataset.key, idx = parseInt(cb.dataset.idx, 10);
+        entryForKey(key).checks[idx] = cb.checked;
+        saveEntry(key);
+        computeStreak();
+        render();
+      });
+    });
+
+    root.querySelectorAll('input[data-ex-key]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const key = inp.dataset.exKey, idx = parseInt(inp.dataset.exIdx, 10), field = inp.dataset.exField;
+        const entry = entryForKey(key);
+        if (!entry.exerciseData[idx]) entry.exerciseData[idx] = { sets: '', reps: '', weight: '' };
+        entry.exerciseData[idx][field] = inp.value.trim();
+        saveEntry(key);
+      });
+    });
+
+    const bindNum = (datasetKey, prop) => {
+      root.querySelectorAll('input[data-' + datasetKey + '-key]').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const key = inp.dataset[datasetKey + 'Key'];
+          entryForKey(key)[prop] = toNumOrNull(inp.value.trim());
+          saveEntry(key);
+        });
+      });
+    };
+    bindNum('cal', 'calories');
+    bindNum('protein', 'protein');
+    bindNum('carbs', 'carbs');
+    bindNum('fat', 'fat');
+
+    root.querySelectorAll('textarea[data-notes-key]').forEach(ta => {
+      ta.addEventListener('blur', () => { const key = ta.dataset.notesKey; entryForKey(key).notes = ta.value; saveEntry(key); });
+    });
+    root.querySelectorAll('textarea[data-menu-key]').forEach(ta => {
+      ta.addEventListener('blur', () => { const key = ta.dataset.menuKey; entryForKey(key).menuText = ta.value; saveEntry(key); });
+      // Drop a stale estimate error as soon as the text changes. Removing the one
+      // element avoids a redraw, which would move the cursor mid-typing.
+      ta.addEventListener('input', () => {
+        const key = ta.dataset.menuKey;
+        if (!estimateError[key]) return;
+        delete estimateError[key];
+        const box = ta.closest('.ft-menu-box');
+        const err = box && box.querySelector('.ft-menu-error');
+        if (err) err.remove();
+      });
+    });
+    root.querySelectorAll('[data-estimate]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.estimate;
+        const ta = root.querySelector('textarea[data-menu-key="' + key + '"]');
+        estimateNutrition(key, ta ? ta.value : entryForKey(key).menuText);
+      });
+    });
+
+    root.querySelectorAll('[data-clear]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.clear;
+        const d = new Date(key + 'T00:00:00');
+        allData[key] = emptyEntry(itemsFor(DAY_PLANS[d.getDay()]).length);
+        saveEntry(key);
+        computeStreak();
+        render();
+      });
+    });
+  }
+
+  initialLoad();
+})();
+</script>
+</body>
+</html>
