@@ -209,11 +209,11 @@
   .ft-set-field input { width: 48px; font-size: 12.5px; padding: 4px 5px; border-radius: 7px; border: 1px solid var(--border); text-align: center; font-variant-numeric: tabular-nums; background: var(--bg); }
   .ft-set-x { align-self: center; margin-bottom: 6px; font-size: 12px; color: var(--text-mute); }
 
-  .ft-cal-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .ft-cal-label { font-size: 13px; font-weight: 600; }
-  .ft-cal-input-wrap { display: flex; align-items: center; gap: 6px; }
-  .ft-cal-input { width: 76px; font-size: 13.5px; padding: 5px 7px; border-radius: 8px; border: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
-  .ft-cal-target { font-size: 11.5px; color: var(--text-mute); }
+  .ft-metric-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .ft-metric-label { font-size: 13px; font-weight: 600; }
+  .ft-metric-wrap { display: flex; align-items: center; gap: 6px; }
+  .ft-metric-input { width: 76px; font-size: 13.5px; padding: 5px 7px; border-radius: 8px; border: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+  .ft-metric-target { font-size: 11.5px; color: var(--text-mute); }
 
   .ft-macro-row { display: flex; gap: 8px; margin-top: 8px; }
   .ft-macro-item { flex: 1; text-align: center; background: var(--bg); border-radius: 8px; padding: 5px 4px; }
@@ -284,6 +284,7 @@
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const CAL_DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const APP_TITLE = 'Fitness Dashboard';
+  const STEP_GOAL = 8000;
   const GEAR_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
   function itemsFor(plan) {
@@ -324,7 +325,7 @@
   }
 
   function emptyExerciseData(n) { return new Array(n).fill(null).map(() => ({ sets: '', reps: '', weight: '' })); }
-  function baseEntry() { return { calories: null, protein: null, carbs: null, fat: null, menuText: '', menuBreakdown: null, notes: '', formRows: 0 }; }
+  function baseEntry() { return { calories: null, protein: null, carbs: null, fat: null, menuText: '', menuBreakdown: null, notes: '', steps: null, formRows: 0 }; }
   function emptyEntry(n) { return Object.assign(baseEntry(), { checks: new Array(n).fill(false), exerciseData: emptyExerciseData(n) }); }
 
   // Keeps whatever overlaps, so changing a day's plan doesn't wipe what was logged.
@@ -383,12 +384,13 @@
     return { checks, exerciseData, unmatched };
   }
 
-  function buildEntryFromFormFields(dateStr, exerciseRaw, foodRaw, notesRaw) {
+  function buildEntryFromFormFields(dateStr, exerciseRaw, foodRaw, notesRaw, stepsRaw) {
     const d = new Date(dateStr + 'T00:00:00');
     const list = itemsFor(DAY_PLANS[d.getDay()]);
     const entry = emptyEntry(list.length);
     entry.menuText = foodRaw || '';
     entry.notes = notesRaw || '';
+    entry.steps = toNumOrNull(stepsRaw);
     if (exerciseRaw) {
       const parsed = parseExerciseList(exerciseRaw, list);
       entry.checks = parsed.checks;
@@ -544,14 +546,23 @@
     const exerciseKey = findKey(row, h => h.includes('exercise'));
     const foodKey = findKey(row, h => h.includes('eat') || h.includes('food') || h.includes('menu') || h.includes('meal'));
     const notesKey = findKey(row, h => h.includes('note'));
+    const stepsKey = findKey(row, h => h.includes('step'));
     return {
       exercise: exerciseKey ? String(row[exerciseKey] || '').trim() : '',
       food: foodKey ? String(row[foodKey] || '').trim() : '',
-      notes: notesKey ? String(row[notesKey] || '').trim() : ''
+      notes: notesKey ? String(row[notesKey] || '').trim() : '',
+      steps: stepsKey ? String(row[stepsKey] || '').trim() : ''
     };
   }
 
   function joinParts(parts, sep) { return parts.filter(Boolean).join(sep); }
+
+  // Steps is a running total for the whole day, so a later reading replaces an
+  // earlier one rather than adding to it.
+  function lastReported(parts) {
+    for (let i = parts.length - 1; i >= 0; i--) if (parts[i]) return parts[i];
+    return '';
+  }
 
   // One day can have several form entries — a response per meal, say. They're
   // grouped by date so the day reads as one list rather than only the first one.
@@ -579,7 +590,8 @@
           dateStr,
           joinParts(rows.map(r => r.exercise), ', '),
           joinParts(rows.map(r => r.food), ', '),
-          joinParts(rows.map(r => r.notes), ' | ')
+          joinParts(rows.map(r => r.notes), ' | '),
+          lastReported(rows.map(r => r.steps))
         );
         entry.formRows = rows.length;
         allData[dateStr] = entry;
@@ -601,6 +613,9 @@
       }
       const newNotes = joinParts(fresh.map(r => r.notes), ' | ');
       if (newNotes) entry.notes = joinParts([entry.notes, newNotes], ' | ');
+
+      const newSteps = lastReported(fresh.map(r => r.steps));
+      if (newSteps) entry.steps = toNumOrNull(newSteps);
 
       const newExercise = joinParts(fresh.map(r => r.exercise), ', ');
       if (newExercise) {
@@ -737,7 +752,7 @@
     exporting = true; render();
     try {
       const dates = Object.keys(allData).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
-      const header = ['date', 'day_of_week', 'focus', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'completion_pct', 'items_completed', 'items_total', 'checklist_detail', 'exercise_log', 'menu_text', 'notes'];
+      const header = ['date', 'day_of_week', 'focus', 'steps', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'completion_pct', 'items_completed', 'items_total', 'checklist_detail', 'exercise_log', 'menu_text', 'notes'];
       const lines = [header.join(',')];
       dates.forEach(dateStr => {
         const v = allData[dateStr];
@@ -758,6 +773,7 @@
         const focus = plan.chips.map(c => c.l).join(' + ');
         const row = [
           dateStr, DOW[d.getDay()], focus,
+          v.steps != null ? v.steps : '',
           v.calories != null ? v.calories : '',
           v.protein != null ? v.protein : '',
           v.carbs != null ? v.carbs : '',
@@ -791,7 +807,7 @@
       // Exact columns from our own export first, then looser guesses for a
       // Google Form sheet, which names its columns as questions.
       const col = {
-        date: byName.date, calories: byName.calories,
+        date: byName.date, calories: byName.calories, steps: byName.steps,
         protein: byName.protein_g, carbs: byName.carbs_g, fat: byName.fat_g,
         checklist: byName.checklist_detail, exerciseLog: byName.exercise_log,
         exerciseText: undefined, menu: byName.menu_text, notes: byName.notes
@@ -803,6 +819,7 @@
         if (col.checklist === undefined && col.exerciseText === undefined && hl.includes('exercise')) col.exerciseText = i;
         if (col.menu === undefined && (hl.includes('eat') || hl.includes('food') || hl.includes('menu') || hl.includes('meal'))) col.menu = i;
         if (col.notes === undefined && hl.includes('note')) col.notes = i;
+        if (col.steps === undefined && hl.includes('step')) col.steps = i;
       });
 
       if (col.date === undefined) throw new Error('no date column');
@@ -847,6 +864,7 @@
         unmatchedTokens = parsed.unmatched;
       }
 
+      entry.steps = toNumOrNull(cell(r, col.steps));
       entry.calories = toNumOrNull(cell(r, col.calories));
       entry.protein = toNumOrNull(cell(r, col.protein));
       entry.carbs = toNumOrNull(cell(r, col.carbs));
@@ -967,9 +985,13 @@
       }
     });
 
-    h += '<div class="ft-cal-row"><span class="ft-cal-label">Calories</span><div class="ft-cal-input-wrap">';
-    h += '<input type="number" inputmode="numeric" class="ft-cal-input" placeholder="—" data-cal-key="' + dateStr + '" value="' + (entry.calories != null ? entry.calories : '') + '">';
-    h += '<span class="ft-cal-target">target ~' + plan.target.toLocaleString() + '</span></div></div>';
+    h += '<div class="ft-metric-row"><span class="ft-metric-label">Steps</span><div class="ft-metric-wrap">';
+    h += '<input type="number" inputmode="numeric" class="ft-metric-input" placeholder="—" data-steps-key="' + dateStr + '" value="' + (entry.steps != null ? entry.steps : '') + '">';
+    h += '<span class="ft-metric-target">goal ' + STEP_GOAL.toLocaleString() + '</span></div></div>';
+
+    h += '<div class="ft-metric-row"><span class="ft-metric-label">Calories</span><div class="ft-metric-wrap">';
+    h += '<input type="number" inputmode="numeric" class="ft-metric-input" placeholder="—" data-cal-key="' + dateStr + '" value="' + (entry.calories != null ? entry.calories : '') + '">';
+    h += '<span class="ft-metric-target">target ~' + plan.target.toLocaleString() + '</span></div></div>';
 
     h += '<div class="ft-macro-row">';
     h += '<div class="ft-macro-item"><label>Protein g</label><input type="number" inputmode="numeric" data-protein-key="' + dateStr + '" value="' + (entry.protein != null ? entry.protein : '') + '" placeholder="—"></div>';
@@ -1223,6 +1245,7 @@
         });
       });
     };
+    bindNum('steps', 'steps');
     bindNum('cal', 'calories');
     bindNum('protein', 'protein');
     bindNum('carbs', 'carbs');
