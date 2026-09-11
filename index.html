@@ -291,7 +291,15 @@
     const list = [{ text: 'Morning stretch', sub: MORNING_SUB, loggable: false }];
     if (plan.preStretch) list.push({ text: 'Pre-workout stretch', sub: PRE_SUB, loggable: false });
     plan.items.forEach(it => list.push({ text: it.name, loggable: !!it.loggable }));
+    list.push({ text: 'Hit step goal', kind: 'steps', loggable: false });
     return list;
+  }
+
+  // The step box is ticked by the number you logged, never by hand, so the two
+  // can't disagree.
+  function applyStepCheck(entry, list) {
+    const i = list.findIndex(it => it.kind === 'steps');
+    if (i !== -1) entry.checks[i] = (entry.steps || 0) >= STEP_GOAL;
   }
 
   function esc(v) {
@@ -341,13 +349,28 @@
       : { sets: '', reps: '', weight: '' };
   }
 
-  function normalizeEntry(e, n) {
+  function normalizeEntry(e, list) {
     e = e || {};
+    const n = list.length;
     const base = baseEntry();
     for (const k in base) if (e[k] === undefined) e[k] = base[k];
     e.checks = resize(e.checks, n, v => !!v, len => new Array(len).fill(false));
     e.exerciseData = resize(e.exerciseData, n, toSetRow, emptyExerciseData);
+    applyStepCheck(e, list);
     return e;
+  }
+
+  function listForKey(dateStr) {
+    return itemsFor(DAY_PLANS[new Date(dateStr + 'T00:00:00').getDay()]);
+  }
+
+  // Every entry, not just the visible week — otherwise the streak counts a
+  // stale step box for days that aren't on screen.
+  function normalizeAll() {
+    Object.keys(allData).forEach(k => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+      allData[k] = normalizeEntry(allData[k], listForKey(k));
+    });
   }
 
   // Matches free text like "Leg press 3x10 @135, Calf raise, Climbed" against the day's item list.
@@ -400,6 +423,8 @@
         entry.notes = entry.notes ? entry.notes + ' | ' + um : um;
       }
     }
+    // After the exercise parse, which replaces the whole checks array.
+    applyStepCheck(entry, list);
     return entry;
   }
 
@@ -488,9 +513,9 @@
   let calendarMonth = null;
 
   function getEntry(dateStr, d) {
-    const n = itemsFor(DAY_PLANS[d.getDay()]).length;
-    if (!allData[dateStr]) allData[dateStr] = emptyEntry(n);
-    else allData[dateStr] = normalizeEntry(allData[dateStr], n);
+    const list = itemsFor(DAY_PLANS[d.getDay()]);
+    if (!allData[dateStr]) allData[dateStr] = emptyEntry(list.length);
+    else allData[dateStr] = normalizeEntry(allData[dateStr], list);
     return allData[dateStr];
   }
   function entryForKey(key) { return getEntry(key, new Date(key + 'T00:00:00')); }
@@ -604,7 +629,8 @@
       const merged = existing.formRows || 0;
       if (rows.length <= merged) return;
       const fresh = rows.slice(merged);
-      const entry = normalizeEntry(existing, itemsFor(DAY_PLANS[new Date(dateStr + 'T00:00:00').getDay()]).length);
+      const list = listForKey(dateStr);
+      const entry = normalizeEntry(existing, list);
 
       const newFood = joinParts(fresh.map(r => r.food), ', ');
       if (newFood) {
@@ -619,7 +645,6 @@
 
       const newExercise = joinParts(fresh.map(r => r.exercise), ', ');
       if (newExercise) {
-        const list = itemsFor(DAY_PLANS[new Date(dateStr + 'T00:00:00').getDay()]);
         const parsed = parseExerciseList(newExercise, list);
         parsed.checks.forEach((c, i) => { if (c) entry.checks[i] = true; });
         parsed.exerciseData.forEach((ed, i) => {
@@ -632,6 +657,7 @@
       }
 
       entry.formRows = rows.length;
+      applyStepCheck(entry, list);
       allData[dateStr] = entry;
       saveEntry(dateStr);
     });
@@ -648,6 +674,7 @@
     failedDates.forEach(k => { if (allData[k]) incoming[k] = allData[k]; });
     allData = incoming;
     mergeFormResponses(res.formResponses || []);
+    normalizeAll();
     lastSynced = new Date();
     computeStreak();
   }
@@ -888,6 +915,7 @@
         });
       }
 
+      applyStepCheck(entry, list);
       allData[dateStr] = entry;
       if (await gasSave(dateStr, entry) === 'failed') { failed++; failedDates.add(dateStr); }
       else saved++;
@@ -967,6 +995,19 @@
     h += '<textarea class="ft-textarea" data-notes-key="' + dateStr + '" placeholder="Notes for today (e.g. swapping pole for cardio, sore knee, etc.)">' + esc(entry.notes) + '</textarea>';
 
     list.forEach((it, idx) => {
+      if (it.kind === 'steps') {
+        const have = entry.steps;
+        const done = (have || 0) >= STEP_GOAL;
+        const goalStr = STEP_GOAL.toLocaleString() + ' steps';
+        const sub = have == null ? goalStr + ' · nothing logged yet'
+          : done ? have.toLocaleString() + ' of ' + goalStr
+          : have.toLocaleString() + ' of ' + goalStr + ' · ' + (STEP_GOAL - have).toLocaleString() + ' to go';
+        h += '<label class="ft-check-row' + (done ? ' checked' : '') + '">';
+        h += '<input type="checkbox" data-steps-jump="' + dateStr + '" title="Set by your step count below"' + (done ? ' checked' : '') + '>';
+        h += '<span><span class="ft-check-text">' + esc(it.text) + '</span>';
+        h += '<div class="ft-check-sub">' + esc(sub) + '</div></span></label>';
+        return;
+      }
       const checked = entry.checks[idx];
       h += '<label class="ft-check-row' + (checked ? ' checked' : '') + '">';
       h += '<input type="checkbox" data-key="' + dateStr + '" data-idx="' + idx + '"' + (checked ? ' checked' : '') + '>';
@@ -1245,7 +1286,26 @@
         });
       });
     };
-    bindNum('steps', 'steps');
+    // Ticked by the step count, so a click sends you to the field that sets it.
+    root.querySelectorAll('input[data-steps-jump]').forEach(cb => {
+      cb.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const target = root.querySelector('input[data-steps-key="' + cb.dataset.stepsJump + '"]');
+        if (target) { target.focus(); target.select(); }
+      });
+    });
+
+    root.querySelectorAll('input[data-steps-key]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const key = inp.dataset.stepsKey;
+        const entry = entryForKey(key);
+        entry.steps = toNumOrNull(inp.value.trim());
+        applyStepCheck(entry, listForKey(key));
+        saveEntry(key);
+        computeStreak();
+        render();
+      });
+    });
     bindNum('cal', 'calories');
     bindNum('protein', 'protein');
     bindNum('carbs', 'carbs');
